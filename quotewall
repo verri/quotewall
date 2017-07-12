@@ -3,12 +3,12 @@
 import os
 import random
 import time
-from PIL import ImageFont
-from PIL import Image
-from PIL import ImageDraw
+import argparse
 
-def recommend_font_size(text):
-    size = 45
+from PIL import ImageFont, Image, ImageDraw
+
+
+def calculate_font_size(text, size):
     l = len(text)
 
     resize_heuristic = 0.9
@@ -18,18 +18,6 @@ def recommend_font_size(text):
         size = size * resize_actual
 
     return int(size)
-
-
-def select_background_image():
-    prefix = "input/"
-    options = os.listdir(prefix)
-    return prefix + random.choice(options)
-
-
-def select_font():
-    prefix = "fonts/"
-    options = os.listdir(prefix)
-    return prefix + random.choice(options)
 
 
 def wrap_text(text, w=30):
@@ -42,51 +30,81 @@ def wrap_text(text, w=30):
             new_text += "\n" + new_sentence
             new_sentence = ""
     new_text += "\n" + new_sentence
-    return new_text
+    return new_text.strip()
 
 
-def write_image(text, output_filename, background_img):
-    # setup
-    text = wrap_text(text)
-    img = Image.new("RGBA", (IMAGE_WIDTH, IMAGE_HEIGHT), (255, 255, 255))
+def create_image(quote, author, background_filename, width, height, font_filename, size, spacing=3):
+    quote = wrap_text(quote)
 
-    # background
-    back = Image.open(background_img, 'r')
-    img_w, img_h = back.size
-    bg_w, bg_h = img.size
-    offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
+    back = Image.open(background_filename, 'r')
+    bg_w, bg_h = back.size
+    img_w = width if width > 0 else bg_w
+    img_h = height if height > 0 else bg_h
+
+    img = Image.new("RGBA", (img_w, img_h), (255, 255, 255))
+
+    offset = ((img_w - bg_w) // 2, (img_h - bg_h) // 2)
     img.paste(back, offset)
 
-    # text
-    font = ImageFont.truetype(FONT, FONT_SIZE)
+    font = ImageFont.truetype(font_filename, size)
     draw = ImageDraw.Draw(img)
+
     img_w, img_h = img.size
-    x = img_w / 2
-    y = img_h / 2
-    textsize = draw.multiline_textsize(text, font=IF, spacing=SPACING)
-    text_w, text_h = textsize
-    x -= text_w / 2
-    y -= text_h / 2
-    draw.multiline_text(align="center", xy=(x, y), text=text, fill=COLOR, font=font, spacing=SPACING)
-    draw = ImageDraw.Draw(img)
+    text_w, text_h = draw.multiline_textsize(quote, font=font, spacing=spacing)
 
-    # output
-    img.save(output_filename)
-    return output_filename
+    x = (img_w - text_w) // 2
+    y = (img_h - text_h) // 2
 
-# text
-text = "This is a test. This is a test. This is a test. This is a test. "
-output_filename = "output/{}.png".format(int(time.time()))
+    draw.multiline_text(align="center", xy=(x, y), text=quote, fill=(
+        255, 255, 255), font=font, spacing=spacing)
+    draw.text(xy=(x, y + text_h + spacing), text=author,
+              fill=(255, 255, 255), font=font)
 
-# config
-FONT = select_font()
-FONT_SIZE = recommend_font_size(text)
-print(FONT_SIZE)
-IF = ImageFont.truetype(FONT, FONT_SIZE)
-IMAGE_WIDTH = 600
-IMAGE_HEIGHT = 350
-COLOR = (255, 255, 255)
-SPACING = 3
+    return img
 
 
-print(write_image(text, output_filename, background_img=select_background_image()))
+def select_file(filename):
+    assert os.path.exists(filename)
+    if os.path.isfile(filename):
+        return filename
+    return os.path.join(filename, random.choice(os.listdir(filename)))
+
+
+def process_args():
+    parser = argparse.ArgumentParser(
+        description='Creates a wallpaper from a quote and a background.')
+
+    parser.add_argument('-b', '--background', help="background filename or folder",
+                        required=True, type=str)
+
+    parser.add_argument('-f', '--font', help="font filename or folder",
+                        required=True, type=str)
+
+    parser.add_argument('-o', '--output', help="output filename",
+                        required=True, type=str)
+
+    parser.add_argument('-d', '--dimensions', help="output dimensions (defaults to background dimensions)",
+                        nargs=2, default=[0, 0], type=int)
+
+    parser.add_argument('-s', '--font-size',
+                        help="font size (defaults to 45)", default=45)
+
+    return parser.parse_args()
+
+if __name__ == "__main__":
+
+    args = process_args()
+
+    text = "This is a test. This is a test. This is a test. This is a test. "
+    bg_filename = select_file(args.background)
+    font_filename = select_file(args.font)
+    width, height = tuple(args.dimensions)
+
+    print("background:", bg_filename)
+    print("font:", font_filename)
+    print("dimensions: ", width, height)
+    print("font size: ", args.font_size)
+
+    img = create_image(text, "foo", bg_filename, width, height, font_filename,
+                       calculate_font_size(text, args.font_size))
+    img.save(args.output)
