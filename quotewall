@@ -33,6 +33,13 @@ def wrap_text(text, w=30):
     return new_text.strip()
 
 
+def read_quote(filename):
+    with open(filename) as f:
+        text = f.readline()
+        author = f.readline()
+        return text.strip(), author.strip()
+
+
 def create_image(quote, author, background_filename, width, height, font_filename, size, spacing=3):
     quote = wrap_text(quote)
 
@@ -57,7 +64,7 @@ def create_image(quote, author, background_filename, width, height, font_filenam
 
     draw.multiline_text(align="center", xy=(x, y), text=quote, fill=(
         255, 255, 255), font=font, spacing=spacing)
-    draw.text(xy=(x, y + text_h + spacing), text=author,
+    draw.text(xy=(x, y + text_h + 3*spacing), text=author,
               fill=(255, 255, 255), font=font)
 
     return img
@@ -72,22 +79,25 @@ def select_file(filename):
 
 def process_args():
     parser = argparse.ArgumentParser(
-        description='Creates a wallpaper from a quote and a background.')
+        description="Creates a wallpaper from a quote and a background.")
 
-    parser.add_argument('-b', '--background', help="background filename or folder",
+    parser.add_argument("-q", "--quote", help="quote filename or folder",
                         required=True, type=str)
 
-    parser.add_argument('-f', '--font', help="font filename or folder",
+    parser.add_argument("-b", "--background", help="background filename or folder",
                         required=True, type=str)
 
-    parser.add_argument('-o', '--output', help="output filename",
+    parser.add_argument("-f", "--font", help="font filename or folder",
                         required=True, type=str)
 
-    parser.add_argument('-d', '--dimensions', help="output dimensions (defaults to background dimensions)",
+    parser.add_argument("-o", "--output", help="output filename",
+                        required=True, type=str)
+
+    parser.add_argument("-d", "--dimensions", help="output dimensions (defaults to background dimensions)",
                         nargs=2, default=[0, 0], type=int)
 
-    parser.add_argument('-s', '--font-size',
-                        help="font size (defaults to 45)", default=45)
+    parser.add_argument("-s", "--font-size",
+                        help="font size (defaults to 45)", default=45, type=int)
 
     return parser.parse_args()
 
@@ -95,16 +105,18 @@ if __name__ == "__main__":
 
     args = process_args()
 
-    text = "This is a test. This is a test. This is a test. This is a test. "
+    text, author = read_quote(select_file(args.quote))
     bg_filename = select_file(args.background)
     font_filename = select_file(args.font)
     width, height = tuple(args.dimensions)
 
+    print("quote:", text)
+    print("author:", author)
     print("background:", bg_filename)
     print("font:", font_filename)
     print("dimensions: ", width, height)
     print("font size: ", args.font_size)
 
-    img = create_image(text, "foo", bg_filename, width, height, font_filename,
+    img = create_image(text, author, bg_filename, width, height, font_filename,
                        calculate_font_size(text, args.font_size))
     img.save(args.output)
