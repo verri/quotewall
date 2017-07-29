@@ -64,7 +64,9 @@ def create_image(quote, author, background_filename, width, height, font_filenam
 
     draw.multiline_text(align="center", xy=(x, y), text=quote, fill=(
         255, 255, 255), font=font, spacing=spacing)
-    draw.text(xy=(x, y + text_h + 3*spacing), text=author,
+
+    author_w, author_h = draw.textsize(author, font=font)
+    draw.text(xy=(x + text_w - author_w, y + text_h + author_h + spacing), text=author,
               fill=(255, 255, 255), font=font)
 
     return img
@@ -109,13 +111,6 @@ if __name__ == "__main__":
     bg_filename = select_file(args.background)
     font_filename = select_file(args.font)
     width, height = tuple(args.dimensions)
-
-    print("quote:", text)
-    print("author:", author)
-    print("background:", bg_filename)
-    print("font:", font_filename)
-    print("dimensions: ", width, height)
-    print("font size: ", args.font_size)
 
     img = create_image(text, author, bg_filename, width, height, font_filename,
                        calculate_font_size(text, args.font_size))
