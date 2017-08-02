@@ -8,6 +8,19 @@ import argparse
 from PIL import ImageFont, Image, ImageDraw
 
 
+def most_frequent_color(image):
+    w, h = image.size
+    pixels = image.getcolors(w * h)
+
+    most_frequent_pixel = pixels[0]
+
+    for count, colour in pixels:
+        if count > most_frequent_pixel[0]:
+            most_frequent_pixel = (count, colour)
+
+    return most_frequent_pixel[1]
+
+
 def calculate_font_size(text, size):
     l = len(text)
 
@@ -53,6 +66,8 @@ def create_image(quote, author, background_filename, width, height, font_filenam
     offset = ((img_w - bg_w) // 2, (img_h - bg_h) // 2)
     img.paste(back, offset)
 
+    r, g, b, a = most_frequent_color(img)
+
     font = ImageFont.truetype(font_filename, size)
     draw = ImageDraw.Draw(img)
 
@@ -63,11 +78,11 @@ def create_image(quote, author, background_filename, width, height, font_filenam
     y = (img_h - text_h) // 2
 
     draw.multiline_text(align="center", xy=(x, y), text=quote, fill=(
-        255, 255, 255), font=font, spacing=spacing)
+        255 - r, 255 - g, 255 - b), font=font, spacing=spacing)
 
     author_w, author_h = draw.textsize(author, font=font)
     draw.text(xy=(x + text_w - author_w, y + text_h + author_h + spacing), text=author,
-              fill=(255, 255, 255), font=font)
+              fill=(255 - r, 255 - g, 255 - b), font=font)
 
     return img
 
