@@ -77,12 +77,23 @@ def create_image(quote, author, background_filename, width, height, font_filenam
     x = (img_w - text_w) // 2
     y = (img_h - text_h) // 2
 
+    for ox, oy in [(x - 2, y - 2), (x + 2, y - 2), (x - 2, y + 2), (x + 2, y + 2)]:
+        draw.multiline_text(align="center", xy=(ox, oy), text=quote, fill=(
+            9 * r // 10, 9 * g // 10, 9 * b // 10), font=font, spacing=spacing)
+
     draw.multiline_text(align="center", xy=(x, y), text=quote, fill=(
         255 - r, 255 - g, 255 - b), font=font, spacing=spacing)
 
     author_w, author_h = draw.textsize(author, font=font)
-    draw.text(xy=(x + text_w - author_w, y + text_h + author_h + spacing), text=author,
-              fill=(255 - r, 255 - g, 255 - b), font=font)
+    x = x + text_w - author_w
+    y = y + text_h + author_h + spacing
+
+    for ox, oy in [(x - 2, y - 2), (x + 2, y - 2), (x - 2, y + 2), (x + 2, y + 2)]:
+        draw.text(xy=(ox, oy), text=author, fill=(
+            9 * r // 10, 9 * g // 10, 9 * b // 10), font=font)
+
+    draw.text(xy=(x, y), text=author, fill=(
+        255 - r, 255 - g, 255 - b), font=font)
 
     return img
 
