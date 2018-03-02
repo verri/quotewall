@@ -1,4 +1,5 @@
 #!/bin/python
+#-*- coding: utf-8 -*-
 
 import os
 import random
@@ -7,6 +8,8 @@ import argparse
 
 from PIL import ImageFont, Image, ImageDraw
 
+def message(title, message):
+  os.system('notify-send "' + title + '" "' + message + '"')
 
 def most_frequent_color(image):
     w, h = image.size
@@ -127,6 +130,8 @@ def process_args():
     parser.add_argument("-s", "--font-size",
                         help="font size (defaults to 45)", default=45, type=int)
 
+    parser.add_argument("-n", "--notify", help="send notification (needs notify-send)")
+
     return parser.parse_args()
 
 
@@ -138,6 +143,9 @@ if __name__ == "__main__":
     bg_filename = select_file(args.background)
     font_filename = select_file(args.font)
     width, height = tuple(args.dimensions)
+
+    if args.notify:
+        message(author, text)
 
     img = create_image(text, author, bg_filename, width, height, font_filename,
                        calculate_font_size(text, args.font_size))
